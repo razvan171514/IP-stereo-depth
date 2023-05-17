@@ -1,0 +1,4 @@
+/home/razvan/Downloads/clion-2022.2.4/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/razvan/Downloads/clion-2022.2.4/bin/ninja/linux/ninja -G Ninja -S /home/razvan/Documents/UTCN/IP/Strereo-depth -B /home/razvan/Documents/UTCN/IP/Strereo-depth/cmake-build-debug
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/razvan/Documents/UTCN/IP/Strereo-depth/cmake-build-debug
