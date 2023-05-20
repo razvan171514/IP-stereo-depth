@@ -87,7 +87,7 @@ int stereo::correlation_s<T, K>::find_correlation(int i, int j, std::pair<int, i
     std::pair<int, int> start_pix = {i - kernel_size.first/2, j - kernel_size.second/2};
     std::pair<int, K> minimum = {INT_MAX, std::numeric_limits<K>::max()};
 
-    for (int k = j; k >= 0; --k) {
+    for (int k = j; k >= cv::max(0, j - 16); --k) {
 
         K sum = 0;
         for (int l = 0; l < kernel_size.first; ++l) {
@@ -105,4 +105,16 @@ int stereo::correlation_s<T, K>::find_correlation(int i, int j, std::pair<int, i
     }
 
     return minimum.first;
+}
+
+stereo::disparity::disparity(stereo::correlation_s<int, int> corr)
+{
+    disparity_matrix = *(new cv::Mat_<uchar>(corr.size.rows, corr.size.cols));
+    for (int i = 0; i < corr.size.rows; ++i) {
+        for (int j = 0; j < corr.size.cols; ++j) {
+            int k = corr.find_correlation(i, j, {5, 5});
+            disparity_matrix(i, j) = j-k;
+        }
+    }
+    disparity_matrix *= 16;
 }

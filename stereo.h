@@ -33,6 +33,13 @@ namespace stereo
         int find_correlation(int i, int j, std::pair<int, int> kernel_size);
     };
 
+    struct disparity
+    {
+        cv::Mat_<uchar> disparity_matrix;
+
+        explicit disparity(correlation_s<int, int> corr);
+    };
+
 }
 
 #endif //STREREO_DEPTH_STEREO_H
