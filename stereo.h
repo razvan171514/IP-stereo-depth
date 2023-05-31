@@ -37,8 +37,26 @@ namespace stereo
     {
         cv::Mat_<uchar> disparity_matrix;
 
-        explicit disparity(correlation_s<int, int> corr);
+        explicit disparity(correlation_s<int, int> corr, std::pair<int, int> kernel_size);
     };
+
+    struct calib
+    {
+        float cam0[3][3]{};
+        float cam1[3][3]{};
+        float doffs{};
+        float baseline{};
+        int width{}, height{};
+        int ndisp{};
+        int isint{};
+        int vmin{}, vmax{};
+        int dyavg{}, dymax{};
+
+        calib() = default;
+        explicit calib(const std::string &calib_file_name);
+    };
+
+    cv::Mat_<float> stereo_depth_image(const disparity& disparity, calib calib);
 
 }
 

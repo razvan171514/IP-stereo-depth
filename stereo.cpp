@@ -87,7 +87,7 @@ int stereo::correlation_s<T, K>::find_correlation(int i, int j, std::pair<int, i
     std::pair<int, int> start_pix = {i - kernel_size.first/2, j - kernel_size.second/2};
     std::pair<int, K> minimum = {INT_MAX, std::numeric_limits<K>::max()};
 
-    for (int k = j; k >= cv::max(0, j - 16); --k) {
+    for (int k = j - (int)(25 * 0.5); k >= cv::max(0, j - (int)(248 * 0.5)); --k) {
 
         K sum = 0;
         for (int l = 0; l < kernel_size.first; ++l) {
@@ -107,14 +107,56 @@ int stereo::correlation_s<T, K>::find_correlation(int i, int j, std::pair<int, i
     return minimum.first;
 }
 
-stereo::disparity::disparity(stereo::correlation_s<int, int> corr)
+stereo::disparity::disparity(stereo::correlation_s<int, int> corr, std::pair<int, int> kernel_size)
 {
     disparity_matrix = *(new cv::Mat_<uchar>(corr.size.rows, corr.size.cols));
     for (int i = 0; i < corr.size.rows; ++i) {
         for (int j = 0; j < corr.size.cols; ++j) {
-            int k = corr.find_correlation(i, j, {5, 5});
+            int k = corr.find_correlation(i, j, kernel_size);
             disparity_matrix(i, j) = j-k;
         }
     }
-    disparity_matrix *= 16;
+//    disparity_matrix *= 16;
+}
+
+stereo::calib::calib(const std::string &calib_file_name)
+{
+    FILE *fp = fopen(calib_file_name.c_str(), "r");
+    if (fp == nullptr)
+        return;
+
+    fscanf(fp, "cam0=[%f %f %f; %f %f %f; %f %f %f]\n",
+           &cam0[0][0], &cam0[0][1], &cam0[0][2],
+           &cam0[1][0], &cam0[1][1], &cam0[1][2],
+           &cam0[2][0], &cam0[2][1], &cam0[2][2]
+    );
+    fscanf(fp, "cam1=[%f %f %f; %f %f %f; %f %f %f]\n",
+           &cam1[0][0], &cam1[0][1], &cam1[0][2],
+           &cam1[1][0], &cam1[1][1], &cam1[1][2],
+           &cam1[2][0], &cam1[2][1], &cam1[2][2]
+    );
+    fscanf(fp, "doffs=%f\nbaseline=%f\n", &doffs, &baseline);
+    fscanf(fp, "width=%i\nheight=%i\n", &width, &height);
+    fscanf(fp, "ndisp=%i\nisint=%i\n", &ndisp, &isint);
+    fscanf(fp, "vmin=%i\nvmax=%i\n", &vmin, &vmax);
+    fscanf(fp, "dyavg=%i\ndymax=%i", &dyavg, &dymax);
+
+    fclose(fp);
+    fp = nullptr;
+}
+
+cv::Mat_<float> stereo::stereo_depth_image(const stereo::disparity &disparity, stereo::calib calib)
+{
+    cv::Mat_<float> stereo_depth(disparity.disparity_matrix.rows, disparity.disparity_matrix.cols);
+
+    for (int i = 0; i < disparity.disparity_matrix.rows; ++i) {
+        for (int j = 0; j < disparity.disparity_matrix.cols; ++j) {
+            stereo_depth(i, j) =
+                    calib.baseline *
+                    calib.cam0[0][0] /
+                    (disparity.disparity_matrix(i, j) + calib.doffs);
+        }
+    }
+
+    return stereo_depth;
 }
